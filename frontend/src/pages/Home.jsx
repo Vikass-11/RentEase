@@ -7,21 +7,38 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedCategory && selectedCategory !== 'All') {
+        params.append('category', selectedCategory);
+      }
+      if (searchQuery) params.append('search', searchQuery);
+      if (minPrice) params.append('minPrice', minPrice);
+      if (maxPrice) params.append('maxPrice', maxPrice);
+
+      const response = await api.get(`/api/products?${params.toString()}`);
+      setProducts(response.data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get(`/api/products?category=${selectedCategory}`);
-        setProducts(response.data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, [selectedCategory]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchProducts();
+  };
 
   const categories = [
     { name: 'All', icon: <LayoutGrid className="w-4 h-4" /> },
@@ -58,7 +75,7 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
         
         {/* 🎛️ FROSTED GLASS FILTER BAR */}
-        <div className="bg-white/70 backdrop-blur-xl p-2 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/80 flex flex-wrap justify-center gap-2 mb-12 max-w-fit mx-auto">
+        <div className="bg-white/70 backdrop-blur-xl p-2 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/80 flex flex-wrap justify-center gap-2 mb-8 max-w-fit mx-auto">
           {categories.map((cat) => (
             <button
               key={cat.name}
@@ -74,6 +91,41 @@ const Home = () => {
             </button>
           ))}
         </div>
+
+        {/* 🔍 SEARCH & PRICE FILTERS */}
+        <form onSubmit={handleSearchSubmit} className="max-w-4xl mx-auto mb-12 flex flex-col sm:flex-row gap-4 items-center justify-center">
+          <div className="w-full sm:w-1/2">
+            <input 
+              type="text" 
+              placeholder="Search pieces..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-5 py-3 rounded-xl bg-white border border-zinc-200 focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
+            />
+          </div>
+          <div className="flex w-full sm:w-auto gap-2">
+            <input 
+              type="number" 
+              placeholder="Min ₹" 
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="w-24 px-4 py-3 rounded-xl bg-white border border-zinc-200 focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
+            />
+            <input 
+              type="number" 
+              placeholder="Max ₹" 
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-24 px-4 py-3 rounded-xl bg-white border border-zinc-200 focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
+            />
+            <button 
+              type="submit"
+              className="px-6 py-3 bg-amber-500 text-zinc-950 rounded-xl font-bold hover:bg-amber-400 transition-colors shadow-md"
+            >
+              Apply
+            </button>
+          </div>
+        </form>
 
         {/* 📦 LOADING STATE */}
         {loading ? (

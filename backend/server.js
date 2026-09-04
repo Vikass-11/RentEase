@@ -75,11 +75,21 @@ app.use('/api/users', userRoutes);
 
 app.get('/api/products', async (req, res) => {
     try {
-        const { category } = req.query;
+        const { category, search, minPrice, maxPrice } = req.query;
         let filter = {};
         
         if (category && category !== 'All') {
             filter.category = category;
+        }
+
+        if (search) {
+            filter.title = { $regex: search, $options: 'i' }; // Case-insensitive search
+        }
+
+        if (minPrice || maxPrice) {
+            filter.monthlyRent = {};
+            if (minPrice) filter.monthlyRent.$gte = Number(minPrice);
+            if (maxPrice) filter.monthlyRent.$lte = Number(maxPrice);
         }
 
         const products = await Product.find(filter);
